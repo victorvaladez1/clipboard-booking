@@ -3,7 +3,7 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 
 export default function RegisterScreen({ navigation }) {
     return (
-        <View style={StyleSheet.container}>
+        <View style={styles.container}>
             <Text>Register Screen</Text>
             <Button title="Go to Login" onPress={() => navigation.navigate('Login')} />
         </View>

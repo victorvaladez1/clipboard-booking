@@ -3,12 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 
 export default function HomeScreen() {
     return (
-        <View style={style.container}>
+        <View style={styles.container}>
             <Text>Welcome to ClipBoard</Text>
         </View>
     );
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
     container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
