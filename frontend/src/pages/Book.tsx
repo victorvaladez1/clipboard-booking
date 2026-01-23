@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import NotificationsPanel from "../components/NotificationsPanel";
 
 type Barber = {
   id: number;
@@ -39,6 +40,8 @@ function localInputToUtcIso(localValue: string) {
 }
 
 export default function Book() {
+  const [customerId, setCustomerId] = useState<number | null>(null);
+
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +124,8 @@ export default function Book() {
         }),
       });
 
+      setCustomerId(customer.id);
+
       // 2) create appointment
       const startUtc = localInputToUtcIso(startLocal);
       const endUtc = addMinutes(new Date(startLocal), selectedServiceObj.duration_minutes).toISOString();
@@ -138,19 +143,18 @@ export default function Book() {
       });
 
       setResultMsg(`Booked! Appointment #${appt.id}`);
-    } catch (err: any) {
-      const msg = err?.message || "Booking failed";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Booking failed";
 
       if (msg.includes("overlaps") || msg.includes("409")) {
         setError("That time is already taken. Try a different time.");
       } else {
         setError(msg);
-      } 
+      }
     } finally {
         setSubmitting(false);
     }
   }
-
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error && !barbers.length && !services.length) return <div className="p-6 text-red-600">{error}</div>;
@@ -223,6 +227,7 @@ export default function Book() {
           <input
             type="datetime-local"
             className="w-full rounded border p-2"
+            value={startLocal}
             onChange={(e) => setStartLocal(e.target.value)}
           />
       </div>
@@ -241,6 +246,8 @@ export default function Book() {
       >
         {submitting ? "Booking..." : "Book appointment"}
       </button>
+
+      <NotificationsPanel customerId={customerId} />
 
       {error ? <div className="mt-4 text-red-600">{error}</div> : null}
       {resultMsg ? <div className="mt-4 text-green-700">{resultMsg}</div> : null}
