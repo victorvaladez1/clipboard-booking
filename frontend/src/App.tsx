@@ -1,8 +1,13 @@
+import Book from "./pages/Book";
+
 function App() {
 
   return (
-    <h1 className="text-xl font-bold">Hello World</h1>
-  )
+    <div>
+      <h1 className="text-xl font-bold">Hello World</h1>
+      <Book />
+    </div>
+  );
 }
 
 export default App
