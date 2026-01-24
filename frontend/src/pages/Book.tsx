@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import NotificationsPanel from "../components/NotificationsPanel";
+import { listAppointmentsForDay, type Appointment as ApiAppointment } from "../api/appointments";
 
 type Barber = {
   id: number;
@@ -58,6 +59,9 @@ export default function Book() {
   //UX state
   const [submitting, setSubmitting] = useState(false);
   const [resultMsg, setResultMsg] = useState("");
+
+  const [taken, setTaken] = useState<ApiAppointment[]>([]);
+  const [takenErr, setTakenErr] = useState("");
  
   useEffect(() => {
     async function load() {
@@ -82,6 +86,29 @@ export default function Book() {
 
     load();
   }, []);
+
+  useEffect(() => {
+    async function loadTaken() {
+      setTaken([]);
+      setTakenErr("");
+
+      if (!selectedBarber || !startLocal) return;
+
+      const date = getDateYYYYMMDD(startLocal);
+      try {
+        const data = await listAppointmentsForDay(selectedBarber, date);
+        setTaken(data);
+      } catch(e: unknown) {
+        if (e instanceof Error) {
+          setTakenErr(e.message);
+        } else {
+          setTakenErr("Failed to load availability");
+        }
+      }
+    }
+
+    loadTaken();
+  }, [selectedBarber, startLocal]);
 
   const selectedServiceObj = useMemo(() => {
     if (!selectedService) return null;
@@ -154,6 +181,11 @@ export default function Book() {
     } finally {
         setSubmitting(false);
     }
+  }
+
+  function getDateYYYYMMDD(localDatetime: string) {
+    if (!localDatetime) return "";
+      return localDatetime.slice(0, 10); //"YYYY-MM-DD"
   }
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -237,6 +269,25 @@ export default function Book() {
             <span className="font-medium">End time:</span>{" "}
             {computedEndLocal ? computedEndLocal.replace("T", " ") : "-"}
           </div>
+      </div>
+
+      <div className="mt-3 rounded border p-3">
+        <div className="mb-2 font-medium">Taken times (that day)</div>
+          {takenErr ? (
+            <div>{takenErr}</div>
+          ) : taken.length === 0 ? (
+              <div>No booked appointments yet.</div>
+           ) : (
+            <ul>
+              {taken.map((a) => (
+                <li key={a.id}>
+                  {new Date(a.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {" - "}
+                  {new Date(a.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </li>
+              ))}
+            </ul>
+           )}
       </div>
 
       <button
