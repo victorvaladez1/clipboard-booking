@@ -12,6 +12,8 @@ from .serializers import (
     NotificationSerializer
 )
 
+from datetime import datetime, timedelta, timezone as dt_timezone
+
 @api_view(["GET"])
 def list_barbers(request):
     qs = Barber.objects.filter(active=True).order_by("name")
@@ -30,8 +32,13 @@ def create_customer(request):
     customer = ser.save()
     return Response(CustomerSerializer(customer).data, status=status.HTTP_201_CREATED)
 
-@api_view(["POST"])
-def create_appointment(request):
+@api_view(["GET", "POST"])
+def appointments(request):
+    if request.method == "GET":
+        return _list_appointments(request)
+    return _create_appointment(request)
+
+def _create_appointment(request):
     """
     Expects:
     {
@@ -98,3 +105,35 @@ def mark_notification_read(request, notification_id: int):
     if updated == 0:
         return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"ok": True})
+
+def _list_appointments(request):
+    barber_id = request.query_params.get("barber_id")
+    date_str = request.query_params.get("date") #YYYY-MM-DD
+
+    if not barber_id or not date_str:
+        return Response(
+            {"error": "barber_id and date query params are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    try:
+        barber_id = int(barber_id)
+    except ValueError:
+        return Response({"error": "barber_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        day = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        return Response({"error": "date must be YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    start = day.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=dt_timezone.utc)
+    end = start + timedelta(days=1)
+
+    qs = Appointment.objects.filter(
+        barber_id=barber_id,
+        status=Appointment.Status.BOOKED,
+        start_time__lt=end,
+        end_time__gt=start,
+    ).order_by("start_time")
+
+    return Response(AppointmentSerializer(qs, many=True).data)
