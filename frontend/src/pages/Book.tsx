@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import NotificationsPanel from "../components/NotificationsPanel";
+import MyAppointments from "../components/MyAppointments";
 import { listAppointmentsForDay, type Appointment as ApiAppointment } from "../api/appointments";
 
 type Barber = {
@@ -200,6 +201,7 @@ export default function Book() {
 
   return (
     <div className="mx-auto max-w-md p-6">
+      <MyAppointments customerId={customerId} />
       <h1 className="mb-6 text-2xl font-semibold">Book an Appointment</h1>
 
       <div className="mb-4">

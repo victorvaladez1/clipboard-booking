@@ -2,6 +2,7 @@ from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.utils import timezone
 
 from .models import Barber, Service, Customer, Appointment, Notification
 from .serializers import (
@@ -13,6 +14,35 @@ from .serializers import (
 )
 
 from datetime import datetime, timedelta, timezone as dt_timezone
+
+@api_view(["GET"])
+def list_appointments_for_customer(request):
+    customer_id = request.query_params.get("customer_id")
+    if not customer_id:
+        return Response({"error": "customer_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    qs = Appointment.objects.filter(customer_id=customer_id).order_by("-start_time")
+    return Response(AppointmentSerializer(qs, many=True).data)
+
+@api_view(["POST"])
+def cancel_appointment(request, appointment_id: int):
+    try:
+        appt = Appointment.objects.get(id=appointment_id)
+    except Appointment.DoesNotExist:
+        return Response({"error":"Not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    if appt.status != Appointment.Status.BOOKED:
+        return Response({"error": "Only BOOKED appointments can be cancelled"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    appt.status = Appointment.Status.CANCELLED
+    appt.save(update_fields=["status"])
+
+    Notification.objects.create(
+        customer=appt.customer,
+        message=f"Appointment cancelled for {appt.start_time}."
+    )
+
+    return Response({"ok": True})
 
 @api_view(["GET"])
 def list_barbers(request):
