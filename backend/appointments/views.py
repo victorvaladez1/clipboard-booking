@@ -15,6 +15,27 @@ from .serializers import (
 
 from datetime import datetime, timedelta, timezone as dt_timezone
 
+@api_view(["POST"])
+def find_or_create_customer(request):
+    name = (request.data.get("name") or "").strip()
+    phone = (request.data.get("phone") or "").strip()
+
+    if not name:
+        return Response({"error": "name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if phone:
+        customer, created = Customer.objects.get_or_create(
+            phone=phone,
+            defaults={"name": name},
+        )
+        if not created and customer.name != name:
+            customer.name = name
+            customer.save(update_fields=["name"])
+    else:
+        customer = Customer.objects.create(name=name, phone="")
+
+    return Response(CustomerSerializer(customer).data, status=status.HTTP_200_OK)
+
 @api_view(["GET"])
 def list_appointments_for_customer(request):
     customer_id = request.query_params.get("customer_id")
