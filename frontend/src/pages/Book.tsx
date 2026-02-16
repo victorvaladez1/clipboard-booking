@@ -144,7 +144,7 @@ export default function Book() {
     setSubmitting(true);
     try {
       // 1) create customer
-      const customer = await api<Customer>("/api/customers/", {
+      const customer = await api<Customer>("/api/customers/find-or-create/", {
         method: "POST",
         body: JSON.stringify({
           name: customerName.trim(),

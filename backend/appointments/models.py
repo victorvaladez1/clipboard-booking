@@ -19,7 +19,7 @@ class Service(models.Model):
 
 class Customer(models.Model):
     name = models.CharField(max_length=120)
-    phone = models.CharField(max_length=30, blank=True, default="")
+    phone = models.CharField(max_length=30, blank=True, default="", unique=True)
 
     def __str__(self) -> str:
         return self.name
